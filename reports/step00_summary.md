@@ -207,6 +207,21 @@ UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 2
 
 ## 五、下一步
 
+## 六、与纯模型训练版对齐更新（2026-08-01）
+
+针对新版文档，补充以下内容：
+
+| 补充项 | 文件 |
+|---|---|
+| 项目范围说明（明确排除Agent/RAG/Memory等） | [docs/project_scope.md](../docs/project_scope.md) |
+| 目录重组（training/sft, preference, rl, data_processing） | 目录结构已更新 |
+| 固定参数文档（种子/template/system prompt/解码参数） | [configs/fixed_params.md](../configs/fixed_params.md) |
+| 训练脚本迁移（run_sft.py, smoke_test.py → training/sft/） | 已迁移 |
+
+---
+
+## 五、下一步
+
 进入**步骤1：定义产品目标、场景和安全边界**，产出：
 - 产品需求文档 PRD
 - 能力边界说明
