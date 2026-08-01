@@ -1,0 +1,132 @@
+# ============================================================
+# 压力管理大模型后训练 - 默认训练配置
+# ============================================================
+
+# ---- 项目元信息 ----
+project:
+  name: "stress-management-llm"
+  description: "压力管理适配大模型后训练"
+  seed: 42
+
+# ---- 模型配置 ----
+model:
+  base_model_name: "Qwen/Qwen2.5-7B-Instruct"  # 默认基座；生产使用 Qwen3.5-9B
+  torch_dtype: "bfloat16"
+  attn_implementation: "flash_attention_2"     # 可选: "sdpa", "eager"
+  trust_remote_code: true
+  use_cache: false                             # 训练时关闭 KV cache
+
+# ---- QLoRA 配置 ----
+qlora:
+  enabled: true
+  bits: 4                                      # 量化位数
+  quant_type: "nf4"                            # nf4 / fp4
+  double_quant: true                           # 双重量化
+  lora_r: 32                                   # LoRA rank (32 / 64)
+  lora_alpha: 64                               # LoRA alpha (通常 2× rank)
+  lora_dropout: 0.05
+  target_modules:                              # 目标模块 (因模型而异)
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  modules_to_save: []                          # 额外全精度保存的模块
+
+# ---- 训练超参 ----
+training:
+  output_dir: "./checkpoints"
+  num_train_epochs: 2
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 1.5e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 200
+  save_steps: 500
+  save_total_limit: 3
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  load_best_model_at_end: true
+  bf16: true
+  tf32: true
+  gradient_checkpointing: true
+  ddp_find_unused_parameters: false
+  dataloader_num_workers: 4
+  remove_unused_columns: false
+
+# ---- 数据配置 ----
+data:
+  max_seq_length: 4096                         # 上下文长度 (后续测试 8192)
+  chat_template: "qwen"                        # chat template 名称
+  train_file: "data/processed/sm-sft-15k-20240801-v1/train.jsonl"
+  eval_file: "data/processed/sm-sft-15k-20240801-v1/dev.jsonl"
+  data_mixture:
+    multi_turn_ratio: 0.6                      # 多轮样本占比
+    single_turn_ratio: 0.4                     # 单轮样本占比
+    general_instruction_ratio: 0.15            # 混入通用指令数据比例
+  sampling_weights:
+    expert_high_quality: 2.0                   # 高质量专家样本上采样权重
+    safety_boundary: 1.5                       # 安全边界样本上采样权重
+    normal: 1.0                                # 普通样本权重
+
+# ---- 实验追踪 ----
+tracking:
+  tool: "wandb"                                # wandb / mlflow / tensorboard
+  wandb_project: "stress-management-llm"
+  wandb_entity: null                           # W&B entity (team/org)
+  run_name: null                               # 不设置则自动生成
+  log_model: true
+  tags: []
+
+# ---- 评测配置 ----
+evaluation:
+  metrics:
+    - "accuracy"
+    - "f1"
+    - "rouge-l"
+    - "bert-score"
+  eval_dataset: "sm-eval-3k-20240801-v1"
+  batch_size: 8
+  max_new_tokens: 512
+  temperature: 0.1
+  top_p: 0.9
+  do_sample: false
+
+# ---- 推理/服务配置 ----
+inference:
+  engine: "vllm"                               # vllm / sglang / transformers
+  quantization: "awq"                          # 部署量化: awq / gptq / none
+  max_model_len: 4096
+  gpu_memory_utilization: 0.85
+  max_num_seqs: 64
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+  repetition_penalty: 1.05
+  max_tokens: 1024
+
+# ---- 安全配置 ----
+safety:
+  risk_classifier_enabled: true
+  output_safety_check_enabled: true
+  hotline_config_path: "configs/hotlines.yaml" # 热线/机构外部配置
+  blocked_patterns_path: "configs/blocked_patterns.txt"
+  risk_levels:
+    L0: "allow_all_support"
+    L1: "allow_support_with_caution"
+    L2: "limited_support_with_escalation"
+    L3: "immediate_escalation_only"
+
+# ---- 硬件检测 (运行时自动填充) ----
+hardware:
+  gpu_count: null
+  gpu_type: null
+  total_memory_gb: null
+  cuda_version: null

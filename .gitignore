@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Models & checkpoints
+models/
+checkpoints/
+smoke_test_checkpoint/
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# Data (keep structure, ignore content)
+data/raw/*
+data/processed/*
+data/external/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+
+# Logs & reports
+logs/
+wandb/
+*.log
+reports/*.json
+reports/*.csv
+!reports/.gitkeep
+
+# Environment
+.env
+*.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Experiment tracking
+mlruns/
+lightning_logs/
