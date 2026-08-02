@@ -1,0 +1,13 @@
+{
+  "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+  "timestamp": "2026-08-02T15:24:35.295145",
+  "eval_file": "data/processed/eval_set_v1.jsonl",
+  "num_samples": 50,
+  "use_4bit": true,
+  "model_load_time_s": 2.6,
+  "total_gen_time_s": 243.3,
+  "avg_gen_time_s": 4.87,
+  "total_response_chars": 12262,
+  "avg_response_chars": 245.2,
+  "failures": 0
+}
