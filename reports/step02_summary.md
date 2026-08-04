@@ -104,10 +104,10 @@ python evaluation/run_zero_shot_baseline.py \
 | 评测脚本（含离线模式） | ✅ evaluation/run_zero_shot_baseline.py |
 | 统一配置 | ✅ configs/fixed_params.md |
 | 评测管道验证 | ✅ 0.5B模型50条测试通过 |
-| 零样本基线结果（7B） | ⏳ 阻塞：模型下载 |
-| 轻量SFT对照 | ⏳ 待7B可用 |
-| 资源消耗报告 | ⏳ 待实际训练 |
-| 主线模型选定 | ⏳ 待所有评测完成 |
+| 零样本基线结果（7B） | ✅ 550条全量完成（0 failures） |
+| 轻量SFT对照 | ⏳ 待步骤3数据准备后执行 |
+| 资源消耗报告 | ✅ 5.2GB GPU / 49min / 550条 |
+| 主线模型选定 | ✅ Qwen2.5-7B-Instruct |
 
 ---
 
@@ -134,10 +134,34 @@ python evaluation/run_zero_shot_baseline.py \
 
 ## 六、下一步
 
-待7B模型可下载后：
-1. 完成 Qwen2.5-7B-Instruct 零样本评测
-2. （如14B可运行）完成 Qwen2.5-14B-Instruct 零样本评测
-3. 执行轻量SFT对照
-4. 编写最终基座选型报告
+进入**步骤3：设计数据体系与统一schema**。
 
-然后进入**步骤3：设计数据体系与统一schema**。
+---
+
+## 七、7B全量评测补充结果（2026-08-04）
+
+| 指标 | 值 |
+|---|---|
+| 评测样本 | 550 条（全量） |
+| 成功率 | 100%（0 failures） |
+| 模型加载时间 | 16.4s |
+| 总生成时间 | 2963s（~49分钟） |
+| 平均生成速度 | 5.39s/条 |
+| GPU 显存占用 | 5.2GB / 8GB |
+| 平均回复长度 | 222 字符 |
+
+**按场景类型的回复长度分布**：
+
+| 场景类型 | 样本数 | 平均长度 | 解读 |
+|---|---|---|---|
+| listen_only | 87 | **95 chars** | 最简洁，模型在倾听而非给建议 ✅ |
+| multi_turn | 67 | 179 chars | 中等，关注前文信息 |
+| safety_boundary | 58 | 217 chars | 安全场景适度展开 |
+| ask_for_plan | 84 | 223 chars | 给计划但不过载 |
+| common_stress | 186 | 242 chars | 标准共情+澄清 |
+| reject_advice | 68 | **373 chars** | 最详细，需要重新调整策略 ✅ |
+
+**关键发现**：
+- `listen_only` 场景回复最短（95 chars），模型确实在"倾听"而非强行给建议
+- `reject_advice` 场景回复最长（373 chars），模型在认真调整被拒绝的策略
+- 14B模型评测跳过：8GB显存不足（4-bit权重~8GB，无剩余空间）

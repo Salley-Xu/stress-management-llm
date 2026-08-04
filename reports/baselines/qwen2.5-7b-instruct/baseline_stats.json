@@ -1,13 +1,13 @@
 {
   "model_name": "D:/anaconda3/envs/stress-mgmt/models/models/Qwen--Qwen2.5-7B-Instruct/snapshots/master",
-  "timestamp": "2026-08-02T17:14:19.877896",
+  "timestamp": "2026-08-04T15:37:28.450831",
   "eval_file": "data/processed/eval_set_v1.jsonl",
-  "num_samples": 100,
+  "num_samples": 550,
   "use_4bit": true,
-  "model_load_time_s": 10.7,
-  "total_gen_time_s": 566.2,
-  "avg_gen_time_s": 5.66,
-  "total_response_chars": 20163,
-  "avg_response_chars": 201.6,
+  "model_load_time_s": 16.4,
+  "total_gen_time_s": 2963.4,
+  "avg_gen_time_s": 5.39,
+  "total_response_chars": 121945,
+  "avg_response_chars": 221.7,
   "failures": 0
 }
