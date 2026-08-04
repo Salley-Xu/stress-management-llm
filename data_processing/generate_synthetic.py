@@ -238,7 +238,7 @@ def generate_sample_api(provider: str, api_key: str, prompt: str) -> str:
 
     if provider == "deepseek":
         url = "https://api.deepseek.com/v1/chat/completions"
-        model_name = "deepseek-chat"
+        model_name = "deepseek-v4-flash"
     elif provider == "openai":
         url = "https://api.openai.com/v1/chat/completions"
         model_name = "gpt-4o"
@@ -262,7 +262,7 @@ def generate_sample_api(provider: str, api_key: str, prompt: str) -> str:
 
 
 def extract_json(text: str) -> Optional[dict]:
-    """从模型输出中提取JSON"""
+    """从模型输出中提取JSON，兼容中文键"""
     # Try to find JSON block
     text = text.strip()
     if text.startswith("```json"):
@@ -271,18 +271,36 @@ def extract_json(text: str) -> Optional[dict]:
         text = text[3:]
     if text.endswith("```"):
         text = text[:-3]
+
+    result = None
     try:
-        return json.loads(text)
+        result = json.loads(text)
     except json.JSONDecodeError:
-        # Try to find JSON object in text
         import re
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
             try:
-                return json.loads(match.group())
+                result = json.loads(match.group())
             except json.JSONDecodeError:
                 pass
-    return None
+
+    if not result or not isinstance(result, dict):
+        return None
+
+    # Normalize Chinese/alternate keys to user/assistant
+    normalized = {}
+    for k, v in result.items():
+        kl = k.lower()
+        if kl in ("用户", "user", "用户消息", "问题"):
+            normalized["user"] = v
+        elif kl in ("助手", "assistant", "回复", "助手回复", "回答"):
+            normalized["assistant"] = v
+        elif kl == "conversation":
+            normalized["conversation"] = v
+        else:
+            normalized[k] = v
+
+    return normalized
 
 
 def build_sample_metadata(
@@ -324,10 +342,10 @@ def run_synthesis(args):
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"synthetic_sft_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
 
-    # 加载本地模型（如需要）
+    # 加载本地模型（仅local模式）
     model = None
     tokenizer = None
-    if args.mode == "local":
+    if args.mode == "local" and args.model_path:
         logger.info(f"Loading local model: {args.model_path}")
         tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
         if tokenizer.pad_token is None:
