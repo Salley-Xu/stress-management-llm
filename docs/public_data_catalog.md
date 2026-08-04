@@ -154,8 +154,45 @@
 
 ---
 
-## 6. 版本历史
+## 6. 已下载数据状态（2026-08-05 更新）
+
+### 6.1 已获取数据集
+
+| 数据集 | 规模 | 语言 | 许可 | 转换状态 |
+|---|---|---|---|---|
+| ESConv-LLM | 910条 | 英文 | Apache-2.0 | ✅ 已转schema (esconv_sft_v1.jsonl) |
+| Adorable EQ | 170条 | 中文 | CC-BY-4.0 | ✅ 已转schema (adorable_eq_sft_v1.jsonl) |
+
+### 6.2 ESConv 详细审计
+
+| 属性 | 值 |
+|---|---|
+| HuggingFace | `Estwld/esconv_llm`（源自 `thu-coai/esconv`） |
+| 规模 | 910条多轮对话（train） |
+| 平均轮数 | 18-29轮 |
+| 策略标签 | 8种（Question/Restatement/Reflection/Affirmation/Suggestions/Information/Self-disclosure/Others） |
+| 情感标注 | anxiety/depression/loneliness/sadness/fear/anger等 |
+| 许可 | Apache-2.0（可用于训练） |
+| 待处理 | **需翻译为中文** |
+
+### 6.3 待获取数据集（网络受限）
+
+以下数据集当前无法通过镜像获取，保留在待获取清单：
+
+| 数据集 | 规模 | 优先恢复 |
+|---|---|---|
+| MeChat/SmileChat | 55K | ⭐⭐⭐ |
+| CPsyCounD | 3.1K | ⭐⭐⭐ |
+| ESCoT | 1.7K | ⭐⭐⭐ |
+| SoulChat | 258K | ⭐⭐ |
+
+**恢复方案**：尝试GitHub直连（需VPN网络环境）、ModelScope镜像、或作者提供的国内网盘。
+
+---
+
+## 7. 版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | V1.0 | 2026-08-04 | 初稿，5个候选数据集审计 |
+| V1.1 | 2026-08-05 | 补充已下载数据状态（ESConv 910 + Adorable 170） |
