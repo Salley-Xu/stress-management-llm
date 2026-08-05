@@ -41,6 +41,8 @@ data/external/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/processed/eval_set_v1.jsonl
+!data/processed/cleaned_data_v1.jsonl
+!data/processed/split/
 !data/processed/public_data/
 !data/processed/synthetic_data/
 !data/external/.gitkeep

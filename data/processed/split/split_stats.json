@@ -1,0 +1,16 @@
+{
+  "total": 5377,
+  "train": 4567,
+  "dev": 535,
+  "test": 275,
+  "leakage_count": 0,
+  "domain_distribution": {
+    "DS-INT": 759,
+    "DS-REL": 862,
+    "DS-LRN": 755,
+    "DS-FAM": 731,
+    "DS-SLP": 783,
+    "DS-WRK": 686,
+    "DS-CAR": 801
+  }
+}
