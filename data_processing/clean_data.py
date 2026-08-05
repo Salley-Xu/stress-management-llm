@@ -135,31 +135,36 @@ def exact_dedup(samples: List[Dict]) -> List[Dict]:
 
 
 def minhash_dedup(samples: List[Dict], threshold: float = 0.8) -> List[Dict]:
-    """MinHash 近重复去重"""
+    """MinHash LSH 近重复去重（适用于大规模数据）"""
     if not HAS_DATASKETCH:
         logger.warning("datasketch not installed, skipping MinHash dedup")
         return samples
 
-    result = []
-    seen_hashes = []
+    from datasketch import MinHashLSH
 
-    for s in samples:
+    # 使用 LSH 做近似查询，避免 O(n^2) 比较
+    lsh = MinHashLSH(threshold=threshold, num_perm=128)
+    result = []
+    skipped = 0
+
+    for idx, s in enumerate(samples):
         text = "".join(m["content"] for m in s["messages"])
         mh = MinHash(num_perm=128)
         # 使用 3-gram 分片
         for i in range(len(text) - 2):
             mh.update(text[i:i+3].encode('utf-8'))
 
-        is_dup = False
-        for existing in seen_hashes:
-            if mh.jaccard(existing) >= threshold:
-                is_dup = True
-                break
+        # 查询是否已有近似重复
+        dup_keys = lsh.query(mh)
+        if dup_keys:
+            skipped += 1
+            continue
 
-        if not is_dup:
-            seen_hashes.append(mh)
-            result.append(s)
+        lsh.insert(f"s{idx}", mh)
+        result.append(s)
 
+    if skipped:
+        logger.info(f"  MinHash LSH: removed {skipped} near-duplicates")
     return result
 
 

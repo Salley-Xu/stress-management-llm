@@ -121,7 +121,7 @@
 **领域分布**（7领域均匀）：
 DS-REL 862 > DS-CAR 801 > DS-SLP 783 > DS-INT 759 > DS-LRN 755 > DS-FAM 731 > DS-WRK 686
 
-### 数据池达成
+### 数据池达成（第一版）
 
 ```
 合计: 5,377 条 (清洗后)
@@ -130,7 +130,57 @@ DS-REL 862 > DS-CAR 801 > DS-SLP 783 > DS-INT 759 > DS-LRN 755 > DS-FAM 731 > DS
   test:    275  ← 已冻结
 ```
 
-**已可支撑第一轮SFT训练**（MVP目标20k-30k，当前为17%）
+---
+
+## 六、SmileChat 大规模扩充（2026-08-05）
+
+### 数据下载
+
+通过 git clone 从 GitHub 成功获取两个数据集：
+
+| 数据集 | 来源 | 规模 | 语言 |
+|---|---|---|---|
+| **SmileChat** | qiuhuachuan/smile | 55,165 对话 / 628K 轮 | 中文 |
+| **ESCoT** | TeigenZhang/ESCoT | 1,707 对话 | 英文（含策略标注） |
+
+### 转换脚本
+
+| 脚本 | 说明 |
+|---|---|
+| [data_processing/convert_smilechat.py](../data_processing/convert_smilechat.py) | SmileChat → schema，55,120条 |
+| [data_processing/convert_escot.py](../data_processing/convert_escot.py) | ESCoT → schema，1,707条 |
+
+### 重新清洗切分结果
+
+| 阶段 | 数量 |
+|---|---|
+| 原始样本 | 63,286 |
+| 清洗后 | **42,677** |
+| train | 36,270 |
+| dev | 4,262 |
+| test | 2,145 |
+| 泄漏 | **0** |
+
+### 优化：MinHash LSH 去重
+
+原MinHash为O(n²)逐对比较，6万条会跑数小时。改用 **MinHash LSH**（局部敏感哈希），4分钟完成。
+
+### 数据池最终达成
+
+```
+合计: 42,677 条 (清洗后)
+  train: 36,270  ← 可训练，已超MVP目标(20k-30k)
+  dev:    4,262
+  test:   2,145  ← 已冻结
+```
+
+**数据规模已达成 MVP 目标**，可直接进入 SFT 训练！
+
+### 领域分布
+
+DS-LRN 12,012 > DS-INT 8,004 > DS-REL 7,655 > DS-WRK 6,547 > DS-FAM 5,859 > DS-CAR 864 > DS-SLP 1,477 > 其他(D-FIN/D-PRC/D-MIG)少量
+
+> 注：DS-CAR/D-SLP/D-FIN/D-PRC/D-MIG 在SmileChat中较少，后续可针对性补充合成数据。
 
 ---
 
