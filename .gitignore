@@ -34,19 +34,12 @@ smoke_test_checkpoint/
 *.pt
 *.pth
 
-# Data (keep structure, ignore large content; scripts regenerate them)
+# Data (all data regenerable by scripts; not pushed to GitHub)
 data/raw/*
 data/processed/*
 data/external/*
 !data/raw/.gitkeep
-!data/raw/ESCoT/          # 原始数据集克隆(只读参考，不提交大文件)
-!data/raw/smile/         # 原始数据集克隆(只读参考，不提交大文件)
 !data/processed/.gitkeep
-!data/processed/eval_set_v1.jsonl
-!data/processed/public_data/esconv_sft_v1.jsonl
-!data/processed/public_data/adorable_eq_sft_v1.jsonl
-!data/processed/public_data/escot_sft_v1.jsonl
-!data/processed/synthetic_data/
 !data/external/.gitkeep
 
 # Logs & reports
