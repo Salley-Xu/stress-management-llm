@@ -40,6 +40,8 @@ data/processed/*
 data/external/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+# 评测数据：用于可复现评测，不属于训练数据，推送到GitHub
+!data/processed/eval_set_v1.jsonl
 !data/external/.gitkeep
 
 # Logs & reports
