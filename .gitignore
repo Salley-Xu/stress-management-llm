@@ -48,6 +48,7 @@ wandb/
 *.log
 reports/*.json
 reports/*.csv
+reports/baselines/
 !reports/.gitkeep
 
 # Environment
