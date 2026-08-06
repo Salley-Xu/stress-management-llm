@@ -6,20 +6,35 @@
 
 ```
 后训练/
-├── data/                   # 数据目录
+├── data/                   # 数据目录（训练数据不推送，脚本可重生成）
 │   ├── raw/                #   原始数据
 │   ├── processed/          #   清洗后数据
 │   └── external/           #   外部数据
+├── data_processing/        # 数据处理脚本
+│   ├── convert_smilechat.py #   SmileChat 转换
+│   ├── convert_escot.py    #   ESCoT 转换
+│   ├── generate_synthetic.py # DeepSeek 合成数据
+│   ├── generate_expert_data.py # 专家数据 + Rubric筛选
+│   ├── clean_data.py       #   清洗去重(LSH)
+│   ├── split_data.py       #   分层切分+泄漏审计
+│   └── evaluate_training_data.py # 100分制质量评估
 ├── training/               # 训练脚本
-│   ├── run_sft.py          #   SFT 训练入口
-│   └── smoke_test.py       #   QLoRA Smoke Test
+│   ├── sft/
+│   │   ├── run_sft_stage1.py # SFT-Stage1 领域对齐
+│   │   └── smoke_test.py     # QLoRA Smoke Test
+│   ├── preference/         #   偏好优化
+│   └── rl/                 #   强化学习
 ├── evaluation/             # 评测脚本
-│   └── eval_basic.py       #   基础自动评测
+│   ├── run_zero_shot_baseline.py # 零样本基线
+│   ├── eval_sft.py         #   SFT后评测
+│   └── deep_error_analysis.py  # LLM错误分析
 ├── serving/                # 推理服务
 │   └── serve.py            #   vLLM/SGLang/Transformers 服务
 ├── configs/                # 配置文件
 │   ├── default.yaml        #   默认训练/评测/服务配置
+│   ├── judge_prompts.md    #   LLM-as-a-Judge prompt
 │   └── naming_convention.md #  命名与版本规范
+├── docs/                   # 项目文档（19份）
 ├── scripts/                # 工具脚本
 │   └── verify_env.py       #   环境验证
 ├── reports/                # 报告输出
@@ -66,25 +81,30 @@ python training/smoke_test.py
 ### 4. SFT 训练
 
 ```bash
-# 使用默认配置
-python training/run_sft.py --config configs/default.yaml
-
-# 自定义参数
-python training/run_sft.py --config configs/default.yaml \
-    --model.base_model_name Qwen/Qwen2.5-7B-Instruct \
-    --qlora.lora_r 64 \
-    --training.num_train_epochs 3 \
-    --tracking.run_name my-experiment
+# SFT-Stage1：领域行为对齐
+python training/sft/run_sft_stage1.py \
+    --train_file data/processed/final_split/train.jsonl \
+    --output_dir checkpoints/sft_stage1 \
+    --epochs 1 --batch_size 1 --grad_accum 8
 ```
+
+> 注：8GB GPU 上 7B QLoRA 单样本约18s，建议用高质量子集控制训练时长。
 
 ### 5. 评测
 
 ```bash
-python evaluation/eval_basic.py \
-    --model_path checkpoints/sm-sft-xxx/final_adapter \
-    --base_model_name Qwen/Qwen2.5-7B-Instruct \
-    --eval_file data/processed/eval/test.jsonl \
-    --output_dir reports/my-eval
+# 零样本基线
+python evaluation/run_zero_shot_baseline.py \
+    --model <model_path> --eval_file data/processed/eval_set_v1.jsonl \
+    --output_dir reports/baselines/xxx
+
+# SFT后评测（加载adapter）
+python evaluation/eval_sft.py \
+    --adapter checkpoints/sft_stage1/final_adapter \
+    --output_dir reports/baselines/sft_stage1
+
+# LLM错误分析
+python evaluation/deep_error_analysis.py --num_samples 550
 ```
 
 ### 6. 推理服务
