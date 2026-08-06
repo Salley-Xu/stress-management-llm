@@ -208,10 +208,12 @@ def main():
 
     # 收集所有输入文件
     input_files = []
-    for d in ["public_data", "synthetic_data"]:
+    for d in ["public_data", "synthetic_data", "expert_data"]:
         dpath = input_dir / d
         if dpath.exists():
             input_files.extend(dpath.glob("*.jsonl"))
+    # 只保留规范化的专家数据池（排除core/normal/filtered分开文件）
+    input_files = [f for f in input_files if "expert_pool_v1_norm" in f.name or "expert_data" not in str(f)]
 
     logger.info(f"Input files: {[f.name for f in input_files]}")
 
