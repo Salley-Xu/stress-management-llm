@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 API_URL = "https://api.deepseek.com/v1/chat/completions"
 MODEL = "deepseek-v4-flash"
 
-BASELINE_PATH = Path("reports/baselines/qwen2.5-7b-instruct/baseline_results.jsonl")
+BASELINE_PATH = Path("reports/baselines/sft_stage1/baseline_results.jsonl")
 
 ANALYSIS_PROMPT = """你是一位心理支持对话质量评审专家。请分析以下压力管理对话中，助手的回复存在哪些错误。
 
@@ -112,7 +112,7 @@ def parse_json(text: str) -> dict:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_samples", type=int, default=550)
-    parser.add_argument("--output", type=str, default="reports/deep_error_analysis.jsonl")
+    parser.add_argument("--output", type=str, default="reports/deep_error_sft.jsonl")
     args = parser.parse_args()
 
     api_key = os.environ.get("DEEPSEEK_API_KEY")
