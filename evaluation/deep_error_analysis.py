@@ -22,8 +22,12 @@ import time
 import logging
 import argparse
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from collections import Counter
+from dotenv import load_dotenv
+
+load_dotenv()  # 加载 .env 中的 DEEPSEEK_API_KEY，否则 api_key=None 会 401
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -109,20 +113,38 @@ def parse_json(text: str) -> dict:
     return {}
 
 
+def analyze_one(r, api_key):
+    """分析单条样本（供并发调用）"""
+    prompt = ANALYSIS_PROMPT.format(
+        user_input=r["user_input"][:500],
+        assistant_response=r["model_response"][:500],
+        scenario=r["scenario_type"],
+    )
+    try:
+        text = call_deepseek(prompt, api_key=api_key)
+        analysis = parse_json(text)
+        if not analysis:
+            analysis = {"errors": [], "error_detail": "parse_failed", "quality_score": 0}
+    except Exception as e:
+        analysis = {"errors": [], "error_detail": f"api_error: {e}", "quality_score": 0}
+    return analysis
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_samples", type=int, default=550)
+    parser.add_argument("--input", type=str, default=str(BASELINE_PATH), help="评测结果jsonl（默认SFT-Stage1）")
     parser.add_argument("--output", type=str, default="reports/deep_error_sft.jsonl")
+    parser.add_argument("--workers", type=int, default=12, help="并发分析数（DeepSeek并发限制2500）")
     args = parser.parse_args()
 
     api_key = os.environ.get("DEEPSEEK_API_KEY")
 
-    with open(BASELINE_PATH, "r", encoding="utf-8") as f:
+    with open(args.input, "r", encoding="utf-8") as f:
         results = [json.loads(l) for l in f if l.strip()]
 
-    # 全量评估（默认550）
     sample = results[:args.num_samples]
-    logger.info(f"Analyzing {len(sample)} samples (full)")
+    logger.info(f"Analyzing {len(sample)} samples with {args.workers} workers")
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -131,21 +153,22 @@ def main():
     quality_scores = []
     t0 = time.time()
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        for i, r in enumerate(sample):
-            prompt = ANALYSIS_PROMPT.format(
-                user_input=r["user_input"][:500],
-                assistant_response=r["model_response"][:500],
-                scenario=r["scenario_type"],
-            )
-            try:
-                text = call_deepseek(prompt, api_key=api_key)
-                analysis = parse_json(text)
-                if not analysis:
-                    analysis = {"errors": [], "error_detail": "parse_failed", "quality_score": 0}
-            except Exception as e:
-                analysis = {"errors": [], "error_detail": f"api_error: {e}", "quality_score": 0}
+    # 并发分析，按原始顺序收集
+    ordered = [None] * len(sample)
+    done = 0
+    with ThreadPoolExecutor(max_workers=args.workers) as ex:
+        futures = {ex.submit(analyze_one, r, api_key): i for i, r in enumerate(sample)}
+        for fut in as_completed(futures):
+            idx = futures[fut]
+            ordered[idx] = fut.result()
+            done += 1
+            if done % 20 == 0:
+                elapsed = time.time() - t0
+                rate = done / elapsed if elapsed > 0 else 0
+                logger.info(f"  Progress: {done}/{len(sample)} ({rate:.1f}/s, {elapsed:.0f}s)")
 
+    with open(output_path, "w", encoding="utf-8") as f:
+        for i, (r, analysis) in enumerate(zip(sample, ordered)):
             errors = analysis.get("errors", [])
             qscore = analysis.get("quality_score", 0)
             for e in errors:
@@ -161,11 +184,6 @@ def main():
                 "analysis": analysis,
             }
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
-
-            if (i + 1) % 10 == 0:
-                elapsed = time.time() - t0
-                rate = (i + 1) / elapsed if elapsed > 0 else 0
-                logger.info(f"  Progress: {i+1}/{len(sample)} ({rate:.1f}/s)")
 
     logger.info("=" * 50)
     logger.info("深度错误分析结果:")
